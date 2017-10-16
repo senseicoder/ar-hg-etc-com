@@ -31,12 +31,12 @@
     name: Get user email from git local config
 
   - set_fact:
-      user_email: git_config_local 
-    when: git_config_local is defined
+      user_email: '{{ git_config_local.config_value }}'
+    when: git_config_local.config_value is defined
 
   - set_fact:
-      user_email: git_config_global 
-    when: user_email is not defined and git_config_global is defined
+      user_email: '{{ git_config_global.config_value }}'
+    when: git_config_local.config_value == "" and git_config_global.config_value != ""
 
   - fail: 
       msg: Cant find your git config
