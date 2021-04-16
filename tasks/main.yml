@@ -1,31 +1,37 @@
 ---
 
--  name: Get status of etc repo
-   register: hg_st
-   always_run: yes
-   changed_when: no
-   when: commit|bool
-   command: hg --cwd /etc st
+#-  name: Get status of etc repo
+#   command: hg --cwd /etc st
+#   register: hg_st
+#   check_mode: no
+#   changed_when: no
+#   become: true
 
-- name: Commit etc repo before actions if needed
-  when: commit|bool and hg_st.stdout
+- name: Commit etc repo if needed
   command: hg --cwd /etc com -u '{{ hgusers[hguser] }}' -Am '{{ comment }}'
+  become: true
+  register: out
+  changed_when: out.stdout is defined and out.stdout != "nothing changed"
+  failed_when: false
 
-- name: Push if requested
-  delegate_to: localhost
-  register: push
-  failed_when: push.rc > 1
-  changed_when: False
-  when: push|bool
-  command: ssh -A {{ ansible_ssh_host|default(inventory_hostname) }} -l root hg --cwd /etc push
+- name: fichiers commités
+  debug: var=out.stdout_lines
+  when: out.stdout_lines is defined and out.stdout_lines|length > 0 and out.stdout != "nothing changed"
 
-- name: Get last commit id
-  register: id
-  command: hg --cwd /etc id
-  always_run: True
-  changed_when: False
-  when: show|bool
+#pas de push, serveur de centralisation à remettre en oeuvre
+#- name: Push if requested
+#  delegate_to: localhost
+#  register: push
+#  failed_when: push.rc > 1
+#  changed_when: False
+#  when: push|bool
+#  command: ssh -A {{ ansible_ssh_host|default(inventory_hostname) }} -l root hg --cwd /etc push
 
-- name: Print last commit id
-  debug: { msg: '{{ id.stdout.split()[0] }}' }
-  when: show|bool
+#- name: Get last commit id
+#  command: hg --cwd /etc id
+#  register: id
+#  check_mode: no
+#  changed_when: False#
+
+#- name: Print last commit id
+#  debug: { msg: '{{ id.stdout.split()[0] }}' }
